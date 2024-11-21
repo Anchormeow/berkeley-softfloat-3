@@ -46,15 +46,20 @@ C_INCLUDES = -I. -I$(SOURCE_DIR)/$(SPECIALIZE_TYPE) -I$(SOURCE_DIR)/include
 COMPILE_C = \
   gcc -c -Werror-implicit-function-declaration -DSOFTFLOAT_FAST_INT64 \
     $(SOFTFLOAT_OPTS) $(C_INCLUDES) -O2 -o $@
+COMPILE_CE = \
+  gcc -Werror-implicit-function-declaration -DSOFTFLOAT_FAST_INT64 \
+    $(SOFTFLOAT_OPTS) $(C_INCLUDES) -O2
 MAKELIB = ar crs $@
 
 OBJ = .o
 LIB = .a
+EXE =
 
 OTHER_HEADERS = $(SOURCE_DIR)/include/opts-GCC.h
 
 .PHONY: all
-all: softfloat$(LIB)
+all: softfloat$(LIB) \
+  mul$(EXE)
 
 OBJS_PRIMITIVES = \
   s_eq128$(OBJ) \
@@ -388,10 +393,15 @@ $(OBJS_SPECIALIZE): %$(OBJ): $(SOURCE_DIR)/$(SPECIALIZE_TYPE)/%.c
 	$(COMPILE_C) $(SOURCE_DIR)/$(SPECIALIZE_TYPE)/$*.c
 
 softfloat$(LIB): $(OBJS_ALL)
-	$(DELETE) $@
+	# $(DELETE) $@
 	$(MAKELIB) $^
+
+mul$(EXE): $(SOURCE_DIR)/mul.c
+	# gcc -I $(SOURCE_DIR)/include -o mul $(SOURCE_DIR)/mul.c -L. -l:softfloat.a
+	$(COMPILE_CE) -o mul $(SOURCE_DIR)/mul.c -L. -l:softfloat.a
 
 .PHONY: clean
 clean:
-	$(DELETE) $(OBJS_ALL) softfloat$(LIB)
+	$(DELETE) $(OBJS_ALL) softfloat$(LIB) \
+  $(DELETE) mul$(EXE)
 
