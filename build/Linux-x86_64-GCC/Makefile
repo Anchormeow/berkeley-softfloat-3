@@ -44,10 +44,10 @@ SOFTFLOAT_OPTS ?= \
 DELETE = rm -f
 C_INCLUDES = -I. -I$(SOURCE_DIR)/$(SPECIALIZE_TYPE) -I$(SOURCE_DIR)/include
 COMPILE_C = \
-  gcc -c -Werror-implicit-function-declaration -DSOFTFLOAT_FAST_INT64 \
+  g++ -c -DSOFTFLOAT_FAST_INT64 \
     $(SOFTFLOAT_OPTS) $(C_INCLUDES) -O2 -o $@
 COMPILE_CE = \
-  gcc -Werror-implicit-function-declaration -DSOFTFLOAT_FAST_INT64 \
+  g++ -DSOFTFLOAT_FAST_INT64 \
     $(SOFTFLOAT_OPTS) $(C_INCLUDES) -O2
 MAKELIB = ar crs $@
 
@@ -59,7 +59,8 @@ OTHER_HEADERS = $(SOURCE_DIR)/include/opts-GCC.h
 
 .PHONY: all
 all: softfloat$(LIB) \
-  mul$(EXE)
+  add$(EXE) \
+  cheng$(EXE)
 
 OBJS_PRIMITIVES = \
   s_eq128$(OBJ) \
@@ -220,7 +221,6 @@ OBJS_OTHERS = \
   f32_to_ui64_r_minMag$(OBJ) \
   f32_to_i32_r_minMag$(OBJ) \
   f32_to_i64_r_minMag$(OBJ) \
-  f32_to_bf16$(OBJ) \
   f32_to_f16$(OBJ) \
   f32_to_f64$(OBJ) \
   f32_to_extF80$(OBJ) \
@@ -242,139 +242,6 @@ OBJS_OTHERS = \
   f32_le_quiet$(OBJ) \
   f32_lt_quiet$(OBJ) \
   f32_isSignalingNaN$(OBJ) \
-  f64_to_ui32$(OBJ) \
-  f64_to_ui64$(OBJ) \
-  f64_to_i32$(OBJ) \
-  f64_to_i64$(OBJ) \
-  f64_to_ui32_r_minMag$(OBJ) \
-  f64_to_ui64_r_minMag$(OBJ) \
-  f64_to_i32_r_minMag$(OBJ) \
-  f64_to_i64_r_minMag$(OBJ) \
-  f64_to_f16$(OBJ) \
-  f64_to_f32$(OBJ) \
-  f64_to_extF80$(OBJ) \
-  f64_to_extF80M$(OBJ) \
-  f64_to_f128$(OBJ) \
-  f64_to_f128M$(OBJ) \
-  f64_roundToInt$(OBJ) \
-  f64_add$(OBJ) \
-  f64_sub$(OBJ) \
-  f64_mul$(OBJ) \
-  f64_mulAdd$(OBJ) \
-  f64_div$(OBJ) \
-  f64_rem$(OBJ) \
-  f64_sqrt$(OBJ) \
-  f64_eq$(OBJ) \
-  f64_le$(OBJ) \
-  f64_lt$(OBJ) \
-  f64_eq_signaling$(OBJ) \
-  f64_le_quiet$(OBJ) \
-  f64_lt_quiet$(OBJ) \
-  f64_isSignalingNaN$(OBJ) \
-  extF80_to_ui32$(OBJ) \
-  extF80_to_ui64$(OBJ) \
-  extF80_to_i32$(OBJ) \
-  extF80_to_i64$(OBJ) \
-  extF80_to_ui32_r_minMag$(OBJ) \
-  extF80_to_ui64_r_minMag$(OBJ) \
-  extF80_to_i32_r_minMag$(OBJ) \
-  extF80_to_i64_r_minMag$(OBJ) \
-  extF80_to_f16$(OBJ) \
-  extF80_to_f32$(OBJ) \
-  extF80_to_f64$(OBJ) \
-  extF80_to_f128$(OBJ) \
-  extF80_roundToInt$(OBJ) \
-  extF80_add$(OBJ) \
-  extF80_sub$(OBJ) \
-  extF80_mul$(OBJ) \
-  extF80_div$(OBJ) \
-  extF80_rem$(OBJ) \
-  extF80_sqrt$(OBJ) \
-  extF80_eq$(OBJ) \
-  extF80_le$(OBJ) \
-  extF80_lt$(OBJ) \
-  extF80_eq_signaling$(OBJ) \
-  extF80_le_quiet$(OBJ) \
-  extF80_lt_quiet$(OBJ) \
-  extF80_isSignalingNaN$(OBJ) \
-  extF80M_to_ui32$(OBJ) \
-  extF80M_to_ui64$(OBJ) \
-  extF80M_to_i32$(OBJ) \
-  extF80M_to_i64$(OBJ) \
-  extF80M_to_ui32_r_minMag$(OBJ) \
-  extF80M_to_ui64_r_minMag$(OBJ) \
-  extF80M_to_i32_r_minMag$(OBJ) \
-  extF80M_to_i64_r_minMag$(OBJ) \
-  extF80M_to_f16$(OBJ) \
-  extF80M_to_f32$(OBJ) \
-  extF80M_to_f64$(OBJ) \
-  extF80M_to_f128M$(OBJ) \
-  extF80M_roundToInt$(OBJ) \
-  extF80M_add$(OBJ) \
-  extF80M_sub$(OBJ) \
-  extF80M_mul$(OBJ) \
-  extF80M_div$(OBJ) \
-  extF80M_rem$(OBJ) \
-  extF80M_sqrt$(OBJ) \
-  extF80M_eq$(OBJ) \
-  extF80M_le$(OBJ) \
-  extF80M_lt$(OBJ) \
-  extF80M_eq_signaling$(OBJ) \
-  extF80M_le_quiet$(OBJ) \
-  extF80M_lt_quiet$(OBJ) \
-  f128_to_ui32$(OBJ) \
-  f128_to_ui64$(OBJ) \
-  f128_to_i32$(OBJ) \
-  f128_to_i64$(OBJ) \
-  f128_to_ui32_r_minMag$(OBJ) \
-  f128_to_ui64_r_minMag$(OBJ) \
-  f128_to_i32_r_minMag$(OBJ) \
-  f128_to_i64_r_minMag$(OBJ) \
-  f128_to_f16$(OBJ) \
-  f128_to_f32$(OBJ) \
-  f128_to_extF80$(OBJ) \
-  f128_to_f64$(OBJ) \
-  f128_roundToInt$(OBJ) \
-  f128_add$(OBJ) \
-  f128_sub$(OBJ) \
-  f128_mul$(OBJ) \
-  f128_mulAdd$(OBJ) \
-  f128_div$(OBJ) \
-  f128_rem$(OBJ) \
-  f128_sqrt$(OBJ) \
-  f128_eq$(OBJ) \
-  f128_le$(OBJ) \
-  f128_lt$(OBJ) \
-  f128_eq_signaling$(OBJ) \
-  f128_le_quiet$(OBJ) \
-  f128_lt_quiet$(OBJ) \
-  f128_isSignalingNaN$(OBJ) \
-  f128M_to_ui32$(OBJ) \
-  f128M_to_ui64$(OBJ) \
-  f128M_to_i32$(OBJ) \
-  f128M_to_i64$(OBJ) \
-  f128M_to_ui32_r_minMag$(OBJ) \
-  f128M_to_ui64_r_minMag$(OBJ) \
-  f128M_to_i32_r_minMag$(OBJ) \
-  f128M_to_i64_r_minMag$(OBJ) \
-  f128M_to_f16$(OBJ) \
-  f128M_to_f32$(OBJ) \
-  f128M_to_extF80M$(OBJ) \
-  f128M_to_f64$(OBJ) \
-  f128M_roundToInt$(OBJ) \
-  f128M_add$(OBJ) \
-  f128M_sub$(OBJ) \
-  f128M_mul$(OBJ) \
-  f128M_mulAdd$(OBJ) \
-  f128M_div$(OBJ) \
-  f128M_rem$(OBJ) \
-  f128M_sqrt$(OBJ) \
-  f128M_eq$(OBJ) \
-  f128M_le$(OBJ) \
-  f128M_lt$(OBJ) \
-  f128M_eq_signaling$(OBJ) \
-  f128M_le_quiet$(OBJ) \
-  f128M_lt_quiet$(OBJ) \
 
 OBJS_ALL = $(OBJS_PRIMITIVES) $(OBJS_SPECIALIZE) $(OBJS_OTHERS)
 
@@ -393,15 +260,20 @@ $(OBJS_SPECIALIZE): %$(OBJ): $(SOURCE_DIR)/$(SPECIALIZE_TYPE)/%.c
 	$(COMPILE_C) $(SOURCE_DIR)/$(SPECIALIZE_TYPE)/$*.c
 
 softfloat$(LIB): $(OBJS_ALL)
-	# $(DELETE) $@
+	$(DELETE) $@
 	$(MAKELIB) $^
+	$(DELETE) $^
+	$(DELETE) $(OBJS_ALL)
 
-mul$(EXE): $(SOURCE_DIR)/mul.c
-	# gcc -I $(SOURCE_DIR)/include -o mul $(SOURCE_DIR)/mul.c -L. -l:softfloat.a
-	$(COMPILE_CE) -o mul $(SOURCE_DIR)/mul.c -L. -l:softfloat.a
+add$(EXE): $(SOURCE_DIR)/../csrc/add.c
+	$(COMPILE_CE) -o add $(SOURCE_DIR)/../csrc/add.c -L. -l:softfloat.a
+
+cheng$(EXE): $(SOURCE_DIR)/../csrc/cheng.cpp
+	$(COMPILE_CE) -o cheng $(SOURCE_DIR)/../csrc/cheng.cpp -L. -l:softfloat.a
 
 .PHONY: clean
 clean:
 	$(DELETE) $(OBJS_ALL) softfloat$(LIB) \
-  $(DELETE) mul$(EXE)
+  $(DELETE) add$(EXE) \
+  $(DELETE) cheng$(EXE)
 
