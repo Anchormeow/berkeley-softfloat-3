@@ -41,7 +41,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 | header, "softfloat.h", be created that folds in "softfloat_types.h" and that
 | eliminates all dependencies on compile-time macros.
 *============================================================================*/
-
+// #define INPUT_SUBNORMAL_CHECK
+// #define OUTPUT_SUBNORMAL_CHECK
+// #define IGNORE_SUBNORMAL_OUTPUT
+// #define INLINE_LEVEL 5
 
 #ifndef softfloat_h
 #define softfloat_h 1

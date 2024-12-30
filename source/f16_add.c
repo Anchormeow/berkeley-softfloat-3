@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "platform.h"
 #include "internals.h"
 #include "softfloat.h"
+#include <stdio.h>
 
 float16_t f16_add( float16_t a, float16_t b )
 {
@@ -46,6 +47,8 @@ float16_t f16_add( float16_t a, float16_t b )
     uint_fast16_t uiA;
     union ui16_f16 uB;
     uint_fast16_t uiB;
+    union ui16_f16 uZ;
+    uint_fast16_t uiZ;
 #if ! defined INLINE_LEVEL || (INLINE_LEVEL < 1)
     float16_t (*magsFuncPtr)( uint_fast16_t, uint_fast16_t );
 #endif
@@ -55,10 +58,52 @@ float16_t f16_add( float16_t a, float16_t b )
     uB.f = b;
     uiB = uB.ui;
 #if defined INLINE_LEVEL && (1 <= INLINE_LEVEL)
+    float16_t tmp;
+    union ui16_f16 utmp;
+    uint_fast16_t uitmp;
+    int_fast8_t exptmp;
+    bool signtmp;
+
     if ( signF16UI( uiA ^ uiB ) ) {
+#ifndef IGNORE_SUBNORMAL_OUTPUT
         return softfloat_subMagsF16( uiA, uiB );
+#else
+        tmp = softfloat_subMagsF16( uiA, uiB );
+        utmp.f = tmp;
+        uitmp = utmp.ui;
+        exptmp  = expF16UI( uitmp );
+        signtmp = signF16UI( uitmp );
+        if ( ! exptmp ) {
+#ifdef OUTPUT_SUBNORMAL_CHECK            
+            printf ("sub output subnormal!\n");
+#endif
+            uiZ = packToF16UI( signtmp, 0, 0 );
+            uZ.ui = uiZ;
+            return uZ.f;
+        } else {
+            return tmp;
+        }
+#endif
     } else {
+#ifndef IGNORE_SUBNORMAL_OUTPUT
         return softfloat_addMagsF16( uiA, uiB );
+#else
+        tmp = softfloat_addMagsF16( uiA, uiB );
+        utmp.f = tmp;
+        uitmp = utmp.ui;
+        exptmp  = expF16UI( uitmp );
+        signtmp = signF16UI( uitmp );
+        if ( ! exptmp ) {
+#ifdef OUTPUT_SUBNORMAL_CHECK
+            printf ("add output subnormal!\n");
+#endif
+            uiZ = packToF16UI( signtmp, 0, 0 );
+            uZ.ui = uiZ;
+            return uZ.f;
+        } else {
+            return tmp;
+        }
+#endif
     }
 #else
     magsFuncPtr =

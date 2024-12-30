@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "internals.h"
 #include "specialize.h"
 #include "softfloat.h"
+#include <stdio.h>
 
 float16_t f16_mul( float16_t a, float16_t b )
 {
@@ -77,6 +78,9 @@ float16_t f16_mul( float16_t a, float16_t b )
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     if ( expA == 0x1F ) {
+#ifdef INPUT_SUBNORMAL_CHECK
+        printf("mul input NaN or inf\n");
+#endif
         if ( sigA || ((expB == 0x1F) && sigB) ) goto propagateNaN;
         magBits = expB | sigB;
         goto infArg;
@@ -90,12 +94,18 @@ float16_t f16_mul( float16_t a, float16_t b )
     *------------------------------------------------------------------------*/
     if ( ! expA ) {
         if ( ! sigA ) goto zero;
+#ifdef INPUT_SUBNORMAL_CHECK
+        printf("mul input subnormal A\n");
+#endif
         normExpSig = softfloat_normSubnormalF16Sig( sigA );
         expA = normExpSig.exp;
         sigA = normExpSig.sig;
     }
     if ( ! expB ) {
         if ( ! sigB ) goto zero;
+#ifdef INPUT_SUBNORMAL_CHECK
+        printf("mul input subnormal B\n");
+#endif
         normExpSig = softfloat_normSubnormalF16Sig( sigB );
         expB = normExpSig.exp;
         sigB = normExpSig.sig;
@@ -112,7 +122,28 @@ float16_t f16_mul( float16_t a, float16_t b )
         --expZ;
         sigZ <<= 1;
     }
+#ifndef IGNORE_SUBNORMAL_OUTPUT
     return softfloat_roundPackToF16( signZ, expZ, sigZ );
+#else
+    float16_t tmp;
+    tmp = softfloat_roundPackToF16( signZ, expZ, sigZ );
+    union ui16_f16 utmp;
+    uint_fast16_t uitmp;
+    int_fast8_t exptmp;
+    utmp.f = tmp;
+    uitmp = utmp.ui;
+    exptmp  = expF16UI( uitmp );
+    if ( ! exptmp ) {
+#ifdef OUTPUT_SUBNORMAL_CHECK
+        printf ("mul output subnormal!\n");
+#endif
+        uiZ = packToF16UI( signZ, 0, 0 );
+        uZ.ui = uiZ;
+        return uZ.f;
+    } else {
+        return tmp;
+    }
+#endif
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  propagateNaN:

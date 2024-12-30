@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "platform.h"
 #include "internals.h"
 #include "softfloat.h"
+#include <stdio.h>
 
 float16_t
  softfloat_roundPackToF16( bool sign, int_fast16_t exp, uint_fast16_t sig )
@@ -67,6 +68,7 @@ float16_t
     *------------------------------------------------------------------------*/
     if ( 0x1D <= (unsigned int) exp ) {
         if ( exp < 0 ) {
+            // printf("0x1D <= (unsigned int) exp, exp < 0\n");
             /*----------------------------------------------------------------
             *----------------------------------------------------------------*/
             isTiny =
@@ -78,7 +80,9 @@ float16_t
             if ( isTiny && roundBits ) {
                 softfloat_raiseFlags( softfloat_flag_underflow );
             }
+        // no need
         } else if ( (0x1D < exp) || (0x8000 <= sig + roundIncrement) ) {
+            printf("(0x1D < exp) || (0x8000 <= sig + roundIncrement)\n");
             /*----------------------------------------------------------------
             *----------------------------------------------------------------*/
             softfloat_raiseFlags(
@@ -100,7 +104,10 @@ float16_t
 #endif
     }
     sig &= ~(uint_fast16_t) (! (roundBits ^ 8) & roundNearEven);
-    if ( ! sig ) exp = 0;
+    if ( ! sig ) {
+        // printf("spe: exp: %x sig: %x\n", exp, sig);
+        exp = 0;
+    }
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
  packReturn:
