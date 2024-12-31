@@ -6,6 +6,10 @@ cd ./build/Linux-x86_64-GCC
 
 echo "cheng:"
 ./cheng
-echo
-echo "add:"
-./add
+sleep $WAIT_TIME
+# echo
+# echo "add:"
+# ./add
+# echo
+echo "tanh:"
+./tanh

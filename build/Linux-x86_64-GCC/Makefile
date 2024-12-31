@@ -39,18 +39,18 @@ SPECIALIZE_TYPE ?= 8086-SSE
 
 SOFTFLOAT_OPTS ?= \
   -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV32TO16 \
-  -DSOFTFLOAT_FAST_DIV64TO32 -DINPUT_SUBNORMAL_CHECK -DIGNORE_SUBNORMAL_OUTPUT
-  # -DSOFTFLOAT_FAST_DIV64TO32
-  # -DSOFTFLOAT_FAST_DIV64TO32 -DINPUT_SUBNORMAL_CHECK -DOUTPUT_SUBNORMAL_CHECK -DIGNORE_SUBNORMAL_OUTPUT
+  -DSOFTFLOAT_FAST_DIV64TO32
+
+ADDITIONAL_OPTS = 
 
 DELETE = rm -f
 C_INCLUDES = -I. -I$(SOURCE_DIR)/$(SPECIALIZE_TYPE) -I$(SOURCE_DIR)/include
 COMPILE_C = \
 @  g++ -c -DSOFTFLOAT_FAST_INT64 \
-    $(SOFTFLOAT_OPTS) $(C_INCLUDES) -O2 -o $@
+    $(SOFTFLOAT_OPTS) $(ADDITIONAL_OPTS) $(C_INCLUDES) -O2 -o $@
 COMPILE_CE = \
   g++ -DSOFTFLOAT_FAST_INT64 \
-    $(SOFTFLOAT_OPTS) $(C_INCLUDES) -O2
+    $(SOFTFLOAT_OPTS) $(ADDITIONAL_OPTS) $(C_INCLUDES) -O2
 MAKELIB = ar crs $@
 
 OBJ = .o
@@ -62,7 +62,8 @@ OTHER_HEADERS = $(SOURCE_DIR)/include/opts-GCC.h
 .PHONY: all
 all: softfloat$(LIB) \
   add$(EXE) \
-  cheng$(EXE)
+  cheng$(EXE) \
+  tanh$(EXE)
 
 OBJS_PRIMITIVES = \
   s_eq128$(OBJ) \
@@ -273,9 +274,13 @@ add$(EXE): $(SOURCE_DIR)/../csrc/add.c
 cheng$(EXE): $(SOURCE_DIR)/../csrc/cheng.cpp
 	$(COMPILE_CE) -o cheng $(SOURCE_DIR)/../csrc/cheng.cpp -L. -l:softfloat.a
 
+tanh$(EXE): $(SOURCE_DIR)/../csrc/tanh.cpp
+	$(COMPILE_CE) -o tanh $(SOURCE_DIR)/../csrc/tanh.cpp -L. -l:softfloat.a
+
 .PHONY: clean
 clean:
 	$(DELETE) $(OBJS_ALL) softfloat$(LIB) \
   $(DELETE) add$(EXE) \
-  $(DELETE) cheng$(EXE)
+  $(DELETE) cheng$(EXE) \
+  $(DELETE) tanh$(EXE)
 
