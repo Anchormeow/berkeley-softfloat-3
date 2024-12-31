@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "softfloat.h"
+#include "ncnn_conv.h"
 
 void calculate_sum_float(float input[], int size) {
     // FP32 sum init
@@ -24,9 +25,11 @@ void calculate_sum_float(float input[], int size) {
 
     printf("calculate_sum_float FP16 Expression: ");
     for (int i = 0; i < size; ++i) {
-        float32_t num_f32;
-        memcpy(&num_f32, &input[i], sizeof(float)); // 将输入转换为float32_t
-        float16_t num_f16 = f32_to_f16(num_f32);   // 转换为float16_t
+        // float32_t num_f32;
+        // memcpy(&num_f32, &input[i], sizeof(float)); // 将输入转换为float32_t
+        // float16_t num_f16 = f32_to_f16(num_f32);   // 转换为float16_t
+        float16_t num_f16;
+        num_f16.v = float32_to_float16(input[i]);
         sum_f16 = f16_add(sum_f16, num_f16);       // 累加
 
         // 打印算式
@@ -39,9 +42,10 @@ void calculate_sum_float(float input[], int size) {
 
     // 转换累加结果为float32并打印
     float result;
-    float32_t result_f32 = f16_to_f32(sum_f16);
+    // float32_t result_f32 = f16_to_f32(sum_f16);
     printf(" = %x in fp16", sum_f16.v);
-    memcpy(&result, &result_f32, sizeof(float));
+    // memcpy(&result, &result_f32, sizeof(float));
+    result = float16_to_float32(sum_f16.v);
     printf(" = %.8f in fp32\n", result);
 }
 
@@ -65,9 +69,10 @@ void calculate_sum_hex(int input[], int size) {
 
     // 转换累加结果为float32并打印
     float result;
-    float32_t result_f32 = f16_to_f32(sum_f16);
+    // float32_t result_f32 = f16_to_f32(sum_f16);
     printf(" = %x in fp16", sum_f16.v);
-    memcpy(&result, &result_f32, sizeof(float));
+    // memcpy(&result, &result_f32, sizeof(float));
+    result = float16_to_float32(sum_f16.v);
     printf(" = %.8f in fp32\n", result);
 }
 

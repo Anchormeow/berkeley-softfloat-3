@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "softfloat.h"
+#include "ncnn_conv.h"
 
 void mul_float(float a, float b) {
 
@@ -14,20 +15,25 @@ void mul_float(float a, float b) {
     float16_t mul_f16;
 
     printf("mul_float FP16 Expression: ");
-    float32_t a_f32, b_f32;
-    memcpy(&a_f32, &a, sizeof(float)); // 将输入转换为float32_t
-    memcpy(&b_f32, &b, sizeof(float)); // 将输入转换为float32_t
-    float16_t a_f16 = f32_to_f16(a_f32);   // 转换为float16_t
-    float16_t b_f16 = f32_to_f16(b_f32);   // 转换为float16_t
+    // float32_t a_f32, b_f32;
+    // memcpy(&a_f32, &a, sizeof(float)); // 将输入转换为float32_t
+    // memcpy(&b_f32, &b, sizeof(float)); // 将输入转换为float32_t
+    // float16_t a_f16 = f32_to_f16(a_f32);   // 转换为float16_t
+    // float16_t b_f16 = f32_to_f16(b_f32);   // 转换为float16_t
+    float16_t a_f16;
+    a_f16.v = float32_to_float16(a);
+    float16_t b_f16;
+    b_f16.v = float32_to_float16(b);
     mul_f16 = f16_mul(a_f16, b_f16);
     // 打印算式
     printf("%.8f (cast to fp16: %x) x %.8f (cast to fp16: %x) =", a, a_f16.v, b, b_f16.v);
 
     // 转换结果为float32并打印
     float result;
-    float32_t result_f32 = f16_to_f32(mul_f16);
+    // float32_t result_f32 = f16_to_f32(mul_f16);
     printf(" %x in fp16", mul_f16.v);
-    memcpy(&result, &result_f32, sizeof(float));
+    // memcpy(&result, &result_f32, sizeof(float));
+    result = float16_to_float32(mul_f16.v);
     printf(" = %.8f in fp32\n", result);
 }
 
@@ -46,9 +52,10 @@ void mul_hex(int a, int b) {
 
     // 转换结果为float32并打印
     float result;
-    float32_t result_f32 = f16_to_f32(mul_f16);
+    // float32_t result_f32 = f16_to_f32(mul_f16);
     printf(" %x in fp16", mul_f16.v);
-    memcpy(&result, &result_f32, sizeof(float));
+    // memcpy(&result, &result_f32, sizeof(float));
+    result = float16_to_float32(mul_f16.v);
     printf(" = %.8f in fp32\n", result);
 }
 
