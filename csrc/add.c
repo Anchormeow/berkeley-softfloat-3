@@ -82,7 +82,7 @@ int main(void) {
 
     calculate_sum_float(input1, size1);
 
-    int input2[] = {0x2e66, 0x3266, 0x34cd, 0x3666, 0x0400};
+    int input2[] = {0xaa10, 0x3c80};
     // int input2[] = {0x0000, 0x0400};
     int size2 = sizeof(input2) / sizeof(input2[0]);
     calculate_sum_hex(input2, size2);

@@ -63,7 +63,8 @@ OTHER_HEADERS = $(SOURCE_DIR)/include/opts-GCC.h
 all: softfloat$(LIB) \
   add$(EXE) \
   cheng$(EXE) \
-  tanh$(EXE)
+  tanh$(EXE) \
+  convert$(EXE)
 
 OBJS_PRIMITIVES = \
   s_eq128$(OBJ) \
@@ -277,10 +278,14 @@ cheng$(EXE): $(SOURCE_DIR)/../csrc/cheng.cpp
 tanh$(EXE): $(SOURCE_DIR)/../csrc/tanh.cpp
 	$(COMPILE_CE) -o tanh $(SOURCE_DIR)/../csrc/tanh.cpp -L. -l:softfloat.a
 
+convert$(EXE): $(SOURCE_DIR)/../csrc/convert.cpp
+	$(COMPILE_CE) -o convert $(SOURCE_DIR)/../csrc/convert.cpp -L. -l:softfloat.a
+
 .PHONY: clean
 clean:
 	$(DELETE) $(OBJS_ALL) softfloat$(LIB) \
   $(DELETE) add$(EXE) \
   $(DELETE) cheng$(EXE) \
-  $(DELETE) tanh$(EXE)
+  $(DELETE) tanh$(EXE) \
+  $(DELETE) convert$(EXE)
 
