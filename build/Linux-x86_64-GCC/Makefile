@@ -64,7 +64,10 @@ all: softfloat$(LIB) \
   add$(EXE) \
   cheng$(EXE) \
   tanh$(EXE) \
-  convert$(EXE)
+  convert$(EXE) \
+  test$(EXE) \
+  fp32_mul_test$(EXE) \
+  fp32_add_test$(EXE)
 
 OBJS_PRIMITIVES = \
   s_eq128$(OBJ) \
@@ -281,11 +284,23 @@ tanh$(EXE): $(SOURCE_DIR)/../csrc/tanh.cpp
 convert$(EXE): $(SOURCE_DIR)/../csrc/convert.cpp
 	$(COMPILE_CE) -o convert $(SOURCE_DIR)/../csrc/convert.cpp -L. -l:softfloat.a
 
+test$(EXE): $(SOURCE_DIR)/../csrc/test.cpp
+	$(COMPILE_CE) -o test $(SOURCE_DIR)/../csrc/test.cpp -L. -l:softfloat.a
+
+fp32_mul_test$(EXE): $(SOURCE_DIR)/../csrc/fp32_mul_test.cpp
+	$(COMPILE_CE) -o fp32_mul_test $(SOURCE_DIR)/../csrc/fp32_mul_test.cpp -L. -l:softfloat.a
+
+fp32_add_test$(EXE): $(SOURCE_DIR)/../csrc/fp32_add_test.cpp
+	$(COMPILE_CE) -o fp32_add_test $(SOURCE_DIR)/../csrc/fp32_add_test.cpp -L. -l:softfloat.a
+
 .PHONY: clean
 clean:
 	$(DELETE) $(OBJS_ALL) softfloat$(LIB) \
   $(DELETE) add$(EXE) \
   $(DELETE) cheng$(EXE) \
   $(DELETE) tanh$(EXE) \
-  $(DELETE) convert$(EXE)
+  $(DELETE) convert$(EXE) \
+  $(DELETE) test$(EXE) \
+  $(DELETE) fp32_mul_test$(EXE) \
+  $(DELETE) fp32_add_test$(EXE)
 

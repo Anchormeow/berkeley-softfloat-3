@@ -12,9 +12,21 @@ cd ./build/Linux-x86_64-GCC
 # ./add
 # sleep $WAIT_TIME
 # echo
-# echo "tanh:"
-# ./tanh
+echo "tanh:"
+./tanh
 sleep $WAIT_TIME
-echo
-echo "convert:"
-./convert
+# echo
+# echo "test:"
+# ./test
+# sleep $WAIT_TIME
+# echo
+# echo "convert:"
+# ./convert
+# sleep $WAIT_TIME
+# echo
+# echo "fp32_mul_test:"
+# ./fp32_mul_test
+# sleep $WAIT_TIME
+# echo
+# echo "fp32_add_test:"
+# ./fp32_add_test

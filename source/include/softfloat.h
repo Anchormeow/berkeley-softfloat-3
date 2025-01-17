@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // #define OUTPUT_SUBNORMAL_CHECK
 // #define IGNORE_SUBNORMAL_OUTPUT
 // #define INLINE_LEVEL 5
+#define MY_F32
 
 #ifndef softfloat_h
 #define softfloat_h 1

@@ -40,7 +40,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "internals.h"
 #include "specialize.h"
 #include "softfloat.h"
+#include <stdio.h>
 
+#ifndef MY_F32
 float32_t f32_mul( float32_t a, float32_t b )
 {
     union ui32_f32 uA;
@@ -135,3 +137,83 @@ float32_t f32_mul( float32_t a, float32_t b )
 
 }
 
+#else
+float32_t f32_mul( float32_t a, float32_t b )
+{
+    // printf("softfloat_mulAddF32\n");
+    union ui32_f32 uA;
+    uint_fast32_t uiA;
+    bool signA;
+    int_fast16_t expA;
+    uint_fast32_t sigA;
+    union ui32_f32 uB;
+    uint_fast32_t uiB;
+    bool signB;
+    int_fast16_t expB;
+    uint_fast32_t sigB;
+    bool signZ;
+    int_fast16_t expZ;
+    uint_fast32_t sigZ, uiZ;
+    union ui32_f32 uZ;
+
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    uA.f = a;
+    uiA = uA.ui;
+    signA = signF32UI( uiA );
+    expA  = expF32UI( uiA );
+    sigA  = fracF32UI( uiA );
+    uB.f = b;
+    uiB = uB.ui;
+    signB = signF32UI( uiB );
+    expB  = expF32UI( uiB );
+    sigB  = fracF32UI( uiB );
+    signZ = signA ^ signB;
+    // printf("expA: %x\n", expA);
+    // printf("expB: %x\n", expB);
+    // printf ("sigA: %x\n", sigA);
+    // printf ("sigB: %x\n", sigB);
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    if ( ! expA ) {
+        goto zero;
+    }
+    if ( ! expB ) {
+        goto zero;
+    }
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    expZ = expA + expB - 0x7F; //-127, may < 0
+    sigA = (sigA | 0x00800000);
+    sigB = (sigB | 0x00800000);
+    // printf("sigA: %x\n", sigA);
+    // printf("sigB: %x\n", sigB);
+    sigZ = (((uint_fast64_t) sigA * sigB) >> 22) & 0x03FFFFFF; // 24+24-22 = 26, zf0
+    // printf("zf0: %x\n", sigZ);
+    uint_fast32_t zf_1;
+    zf_1 = sigZ & 0x01FFFFFF; // 25
+    // printf("zf_1: %x\n", zf_1);
+    bool carry;
+    carry = (bool)((sigZ & 0x02000000) || (zf_1 == 0x01FFFFFF)); // 26
+    // printf("carry: %d\n", carry);
+    uint_fast32_t zf;
+    zf = carry ? (((zf_1 >> 2) & 0x07FFFFF) + ((zf_1 >> 1) & 0x00000001)) : (((zf_1 >> 1) & 0x07FFFFF) + (zf_1 & 0x00000001)); // 26
+    // printf("zf: %x\n", zf);
+    if (carry) {
+        expZ++;
+    }
+    expZ = expZ & 0xFF;
+    // printf("expZ: %x\n", expZ);
+    uiZ = packToF32UI(signZ, expZ, zf);
+    goto uiZ;
+
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+ zero:
+    uiZ = packToF32UI( signZ, 0, 0 );
+ uiZ:
+    uZ.ui = uiZ;
+    return uZ.f;
+
+}
+#endif
