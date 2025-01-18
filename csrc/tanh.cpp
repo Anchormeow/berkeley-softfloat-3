@@ -118,11 +118,14 @@ float calculatePiecewise(float x) {
         {0x40d80000, 0x41080000, 0xb59e81d0, 0x37a1d096, 0x3f7ffad5}, // 31
     };
     
+    // (a * (x * x)) + (c + (x * b))
     for (const auto& segment : table) {
         if (xu.v >= segment.lower_bound && xu.v < segment.upper_bound) { // 查找区间
-            float32_t ax2 = f32_mul(f32_mul({segment.a}, xu), xu);
-            float32_t bx = f32_mul({segment.b}, xu);
-            float32_t result = f32_add(f32_add(ax2, bx), {segment.c});
+            float32_t x2 = f32_mul(xu, xu);
+            float32_t ax2 = f32_mul({segment.a}, x2);
+            float32_t bx = f32_mul(xu, {segment.b});
+            float32_t bx_c = f32_add({segment.c}, bx);
+            float32_t result = f32_add(ax2, bx_c);
             float t;
             memcpy(&t, &result, sizeof(result));
             return (flag == 1)? -t : t; // 计算结果
