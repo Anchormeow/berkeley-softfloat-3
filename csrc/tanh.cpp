@@ -8,7 +8,7 @@
 
 // 函数：根据输入 x 和分段表，计算 ax^2 + bx + c
 #ifndef MY_F32
-float calculatePiecewise(float x) {
+float calculate_tanh(float x) {
     struct Segment {
         float lower_bound; // 区间下限
         float upper_bound; // 区间上限
@@ -68,7 +68,7 @@ float calculatePiecewise(float x) {
     }
 }
 #else
-float calculatePiecewise(float x) {
+float calculate_tanh(float x) {
     struct Segment {
         unsigned int lower_bound; // 区间下限
         unsigned int upper_bound; // 区间上限
@@ -137,27 +137,123 @@ float calculatePiecewise(float x) {
         return (flag == 1)?-1.0f:1.0f; // 如果 x 超出范围，返回默认值 1.0
     }
 }
+
+float calculate_sigmoid(float x) {
+    struct Segment {
+        unsigned int lower_bound; // 区间下限
+        unsigned int upper_bound; // 区间上限
+        unsigned int a;           // 参数 a
+        unsigned int b;           // 参数 b
+        unsigned int c;           // 参数 c
+    };
+    int flag = 0;
+    if(x<0.0f) {
+        x = -x;
+        flag = 1;
+    }
+    float32_t xu;
+    memcpy(&xu, &x, sizeof(x));
+    // 定义分段表，包含所有区间的 [lower_bound, upper_bound) 和对应的 a, b, c
+    std::vector<Segment> table = {
+        {0x00000000, 0x3BA3D70A, 0xB923E2BB, 0x3E80000A, 0xAF0EBA6F}, // 1
+        {0x3BA3D70A, 0x3C23D70A, 0xB9F5C080, 0x3E800073, 0xB20CE0A8},
+        {0x3C23D70A, 0x3CA3D70A, 0xBA75B682, 0x3E8001CD, 0xB38CD159},
+        {0x3CA3D70A, 0x3D23D70A, 0xBAF5AEBA, 0x3E800734, 0xB50CCF23},
+        {0x3D23D70A, 0x3D75C28F, 0xBB4CA065, 0x3E80144A, 0xB62A4AF3},
+        {0x3D75C28F, 0x3DA3D70A, 0xBB8F1FC6, 0x3E8027E1, 0xB6EC2088}, // 6
+        {0x3DA3D70A, 0x3DCCCCCD, 0xBBB7D216, 0x3E8041EC, 0xB77BAD8D},
+        {0x3DCCCCCD, 0x3E19999A, 0xBBFEA5FF, 0x3E807DF8, 0xB824FAC2},
+        {0x3E19999A, 0x3E4CCCCD, 0xBC315DE5, 0x3E80F606, 0xB8E30848},
+        {0x3E4CCCCD, 0x3E99999A, 0xBC7AA620, 0x3E81EC06, 0xB9A054D8},
+        {0x3E99999A, 0x3ECCCCCD, 0xBCAC02A1, 0x3E83AB81, 0xBA56B1D1}, // 11
+        {0x3ECCCCCD, 0x3F000000, 0xBCD76C3F, 0x3E85D64C, 0xBADA5B80},
+        {0x3F000000, 0x3F19999A, 0xBCFEDB80, 0x3E884C34, 0xBB3BE42B},
+        {0x3F19999A, 0x3F400000, 0xBD14CEE5, 0x3E8B8C8E, 0xBB9D521D},
+        {0x3F400000, 0x3F666666, 0xBD295E45, 0x3E8F6334, 0xBBF92B5F},
+        {0x3F666666, 0x3F8CCCCD, 0xBD39E538, 0x3E931EF9, 0xBC32A086}, // 16
+        {0x3F8CCCCD, 0x3FA66666, 0xBD4380C1, 0x3E95BA06, 0xBC5FE5B6},
+        {0x3FA66666, 0x3FC00000, 0xBD4448BD, 0x3E95F333, 0xBC63E979},
+        {0x3FC00000, 0x3FE66666, 0xBD3B6AC3, 0x3E928988, 0xBC0FCE2E},
+        {0x3FE66666, 0x40066666, 0xBD2799D9, 0x3E8993CF, 0x3BE76608},
+        {0x40066666, 0x4019999A, 0xBD0EF5B5, 0x3E79410A, 0x3D09E561}, // 21
+        {0x4019999A, 0x40300000, 0xBCE753FA, 0x3E5860C4, 0x3D94307F},
+        {0x40300000, 0x40400000, 0xBCB90658, 0x3E38CECA, 0x3DEA5259},
+        {0x40400000, 0x40600000, 0xBC888AEA, 0x3E13EB04, 0x3E2D52A7},
+        {0x40600000, 0x40800000, 0xBC300750, 0x3DD340C9, 0x3E7715A3},
+        {0x40800000, 0x40900000, 0xBBDD9D08, 0x3D924B00, 0x3E9BE88D}, // 26
+        {0x40900000, 0x40A33333, 0xBB833D6F, 0x3D3EEF4E, 0x3EB881A3},
+        {0x40A33333, 0x40C66666, 0xBAE81040, 0x3CC15E34, 0x3ED6DC4B},
+        {0x40C66666, 0x40E80000, 0xBA1FAC94, 0x3C1A647E, 0x3EED0B3D},
+        {0x40E80000, 0x41080000, 0xB94C9A5D, 0x3B634974, 0x3EF80487},
+        {0x41080000, 0x41300000, 0xB80884F5, 0x3A38326D, 0x3EFE0C07}, // 31
+    };
+    
+    // (a * (x * x)) + (c + (x * b))
+    for (const auto& segment : table) {
+        if (xu.v >= segment.lower_bound && xu.v < segment.upper_bound) { // 查找区间
+            float32_t x2 = f32_mul(xu, xu);
+            float32_t ax2 = f32_mul({segment.a}, x2);
+            float32_t bx = f32_mul(xu, {segment.b});
+            float32_t bx_c = f32_add({segment.c}, bx);
+            float32_t result = f32_add(ax2, bx_c);
+
+            float32_t tmp;
+            if (flag == 1) {
+                tmp = {(result.v | 0x80000000)};
+            } else {
+                tmp = result;
+            }
+            float32_t plus05 = f32_add(tmp, {0x3f000000}); 
+            float t;
+            memcpy(&t, &plus05, sizeof(result));
+            return t; // 计算结果
+        }
+    }
+    if(x == 0.0f) {
+        return 0.0f;
+    } else {
+        return (flag == 1)?0.0f:1.0f; // 如果 x 超出范围，返回默认值 0.5
+    }
+}
+
 #endif
 
 
 int main() {
     float x;
-    int err = 0;
-    int total = 0;
+    int err1 = 0;
+    int err2 = 0;
+    int total1 = 0;
+    int total2 = 0;
     // for(x=-10.0f;x<10.0f;x=x+1.0f) {
-    for(x=-9.0f;x<9.0f;x=x+0.002f) {
-        float result = calculatePiecewise(x);
-        float result_e = tanhf(x);
+    for(x=-9.0f;x<9.0f;x=x+0.005f) {
+        // tanh
+        float result_tanh = calculate_tanh(x);
+        float result_e_tanh = tanhf(x);
     
-        unsigned short result_f16 = float32_to_float16(result);
-        unsigned short result_e_f16 = float32_to_float16(result_e);
-        int diff = result_f16 - result_e_f16;
-        printf("%.8f %.8f %x %x %d\n", result, result_e, result_f16, result_e_f16, diff);
-        if (diff != 0) {
-            err++;
+        unsigned short result_f16_tanh = float32_to_float16(result_tanh);
+        unsigned short result_e_f16_tanh = float32_to_float16(result_e_tanh);
+        int diff1 = result_f16_tanh - result_e_f16_tanh;
+        printf("%.8f \t %.8f \t %.8f \t %x \t %x \t %d\n", x, result_tanh, result_e_tanh, result_f16_tanh, result_e_f16_tanh, diff1);
+        if (diff1 != 0) {
+            err1++;
         }
-        total++;
+        total1++;
     }
-    printf("err/total: %d/%d\n", err, total);
+    printf("err1/total1: %d/%d\n\n\n", err1, total1);
+    for(x=-11.0f;x<11.0f;x=x+0.005f) {
+        // sigmoid
+        float result_sigmoid = calculate_sigmoid(x);
+        float result_e_sigmoid = 1.0f / (1.0f + expf(-x));
+        unsigned short result_f16_sigmoid = float32_to_float16(result_sigmoid);
+        unsigned short result_e_f16_sigmoid = float32_to_float16(result_e_sigmoid);
+        int diff2 = result_f16_sigmoid - result_e_f16_sigmoid;
+        printf("%.8f \t %.8f \t %.8f \t %x \t %x \t %d\n", x, result_sigmoid, result_e_sigmoid, result_f16_sigmoid, result_e_f16_sigmoid, diff2);
+        if (diff2 != 0) {
+            err2++;
+        }
+        total2++;
+    }
+    printf("err2/total2: %d/%d\n", err2, total2);
     return 0;
 }

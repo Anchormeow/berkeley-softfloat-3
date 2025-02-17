@@ -113,8 +113,10 @@ int main(void) {
     float b1 = 0.2f;
     mul_float(a1, b1);
 
-    int a2 = 0x2e66;
-    int b2 = 0x3266;
+    // int a2 = 0x2e66;
+    // int b2 = 0x3266;
+    int a2 = 0x9fbb;
+    int b2 = 0xa00a;
 
     mul_hex(a2, b2);
     return 0;
