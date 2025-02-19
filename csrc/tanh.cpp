@@ -68,7 +68,7 @@ float calculate_tanh(float x) {
     }
 }
 #else
-float calculate_tanh(float x) {
+template <typename T> float calculate_tanh(T x) {
     struct Segment {
         unsigned int lower_bound; // 区间下限
         unsigned int upper_bound; // 区间上限
@@ -77,12 +77,19 @@ float calculate_tanh(float x) {
         unsigned int c;           // 参数 c
     };
     int flag = 0;
-    if(x<0.0f) {
-        x = -x;
-        flag = 1;
-    }
+    // if(x<0.0f) {
+    //     x = -x;
+    //     flag = 1;
+    // }
     float32_t xu;
     memcpy(&xu, &x, sizeof(x));
+
+    // x < 0
+    if((xu.v >> 31) == 1) {
+        // printf("x is: %x\n", xu.v);
+        xu.v = xu.v & 0x7FFFFFFF;
+        flag = 1;
+    }
     // 定义分段表，包含所有区间的 [lower_bound, upper_bound) 和对应的 a, b, c
     std::vector<Segment> table = {
         {0x00000000, 0x3b23d70a, 0xbaa3caee, 0x3f80000a, 0xaf8dea53}, // 1
@@ -138,7 +145,7 @@ float calculate_tanh(float x) {
     }
 }
 
-float calculate_sigmoid(float x) {
+template <typename T> float calculate_sigmoid(T x) {
     struct Segment {
         unsigned int lower_bound; // 区间下限
         unsigned int upper_bound; // 区间上限
@@ -147,12 +154,19 @@ float calculate_sigmoid(float x) {
         unsigned int c;           // 参数 c
     };
     int flag = 0;
-    if(x<0.0f) {
-        x = -x;
-        flag = 1;
-    }
+    // if(x<0.0f) {
+    //     x = -x;
+    //     flag = 1;
+    // }
     float32_t xu;
     memcpy(&xu, &x, sizeof(x));
+
+    // x < 0
+    if((xu.v >> 31) == 1) {
+        // printf("x is: %x\n", xu.v);
+        xu.v = xu.v & 0x7FFFFFFF;
+        flag = 1;
+    }
     // 定义分段表，包含所有区间的 [lower_bound, upper_bound) 和对应的 a, b, c
     std::vector<Segment> table = {
         {0x00000000, 0x3BA3D70A, 0xB923E2BB, 0x3E80000A, 0xAF0EBA6F}, // 1
@@ -228,7 +242,7 @@ int main() {
     // for(x=-10.0f;x<10.0f;x=x+1.0f) {
     for(x=-9.0f;x<9.0f;x=x+0.005f) {
         // tanh
-        float result_tanh = calculate_tanh(x);
+        float result_tanh = calculate_tanh<float>(x);
         float result_e_tanh = tanhf(x);
     
         unsigned short result_f16_tanh = float32_to_float16(result_tanh);
@@ -241,9 +255,17 @@ int main() {
         total1++;
     }
     printf("err1/total1: %d/%d\n\n\n", err1, total1);
-    for(x=-11.0f;x<11.0f;x=x+0.005f) {
+
+    // verify negative int
+    float32_t t1;
+    t1.v = 0xbf800000;
+    float t1h = calculate_tanh<unsigned int>(t1.v);
+    printf("t1h: %f\n", t1h);
+
+    for(x=-11.1f;x<11.0f;x=x+0.005f) {
+    // for(y=0xc1300000;y>0xc12ccccd;y=y-0x00000001) {
         // sigmoid
-        float result_sigmoid = calculate_sigmoid(x);
+        float result_sigmoid = calculate_sigmoid<float>(x);
         float result_e_sigmoid = 1.0f / (1.0f + expf(-x));
         unsigned short result_f16_sigmoid = float32_to_float16(result_sigmoid);
         unsigned short result_e_f16_sigmoid = float32_to_float16(result_e_sigmoid);
@@ -255,5 +277,11 @@ int main() {
         total2++;
     }
     printf("err2/total2: %d/%d\n", err2, total2);
+
+    // test -12
+    float32_t t2;
+    t2.v = 0xc1400000;
+    float t2h = calculate_sigmoid<unsigned int>(t2.v);
+    printf("t2h: %f\n", t2h);
     return 0;
 }
