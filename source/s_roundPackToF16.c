@@ -53,9 +53,12 @@ float16_t
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
+    // roundingMode = 0
     roundingMode = softfloat_roundingMode;
+    // true
     roundNearEven = (roundingMode == softfloat_round_near_even);
     roundIncrement = 0x8;
+    // roundIncrement = 0x8
     if ( ! roundNearEven && (roundingMode != softfloat_round_near_maxMag) ) {
         roundIncrement =
             (roundingMode
@@ -63,9 +66,15 @@ float16_t
                 ? 0xF
                 : 0;
     }
+    // LSB 4bits
     roundBits = sig & 0xF;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
+    // mul:
+    // exp = -14 ~ 45
+    // exp < 0 / exp >= 29
+    // add:
+    // exp = ?
     if ( 0x1D <= (unsigned int) exp ) {
         if ( exp < 0 ) {
             // printf("0x1D <= (unsigned int) exp, exp < 0\n");
@@ -73,14 +82,20 @@ float16_t
             *----------------------------------------------------------------*/
             isTiny =
                 (softfloat_detectTininess == softfloat_tininess_beforeRounding)
-                    || (exp < -1) || (sig + roundIncrement < 0x8000);
+                    || (exp < -1) || (sig + roundIncrement < 0x8000); // ARM 1/8086 0 || (exp < -1) || (sig + 8 < 0x8000)
+            // mul:
+            // -exp = 1 ~ 14
             sig = softfloat_shiftRightJam32( sig, -exp );
             exp = 0;
             roundBits = sig & 0xF;
             if ( isTiny && roundBits ) {
                 softfloat_raiseFlags( softfloat_flag_underflow );
             }
-        // no need
+        // too big number, no need
+        // mul:
+        // exp = 30 ~ 45 || exp = 29 but carry
+        // add:
+        // exp = ?
         } else if ( (0x1D < exp) || (0x8000 <= sig + roundIncrement) ) {
             printf("(0x1D < exp) || (0x8000 <= sig + roundIncrement)\n");
             /*----------------------------------------------------------------

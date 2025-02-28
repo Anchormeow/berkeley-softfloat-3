@@ -66,6 +66,7 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
     sigB = fracF16UI( uiB );
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
+    // expDiff = -31 ~ 31
     expDiff = expA - expB;
     if ( ! expDiff ) {
         /*--------------------------------------------------------------------
@@ -81,7 +82,9 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
         }
         signZ = signF16UI( uiA );
         expZ = expA;
+        // 1.A + 1.B
         sigZ = 0x0800 + sigA + sigB;
+        // sigZ = 0 and expZ < 30
         if ( ! (sigZ & 1) && (expZ < 0x1E) ) {
             sigZ >>= 1;
             goto pack;
@@ -107,6 +110,8 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
             expZ = expB;
             sigX = sigB | 0x0400;
             sigY = sigA + (expA ? 0x0400 : sigA);
+            // expDiff = -12 ~ -1
+            // shiftDist = 7 ~ 18
             shiftDist = 19 + expDiff;
         } else {
             /*----------------------------------------------------------------
@@ -123,8 +128,11 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
             expZ = expA;
             sigX = sigA | 0x0400;
             sigY = sigB + (expB ? 0x0400 : sigB);
+            // expDiff = 1 ~ 12
+            // shiftDist = 7 ~ 18
             shiftDist = 19 - expDiff;
         }
+        // 1.X(10)0(19) + 1.Y(10)0(19 - expDiff), 31.W
         sig32Z =
             ((uint_fast32_t) sigX<<19) + ((uint_fast32_t) sigY<<shiftDist);
         if ( sig32Z < 0x40000000 ) {
@@ -135,6 +143,7 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
         if ( sig32Z & 0xFFFF ) {
             sigZ |= 1;
         } else {
+            // sigZ last 0000, expZ < 30
             if ( ! (sigZ & 0xF) && (expZ < 0x1E) ) {
                 sigZ >>= 4;
                 goto pack;
@@ -151,6 +160,7 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
     *------------------------------------------------------------------------*/
  addEpsilon:
     roundingMode = softfloat_roundingMode;
+    // roundingMode = 0
     if ( roundingMode != softfloat_round_near_even ) {
         if (
             roundingMode

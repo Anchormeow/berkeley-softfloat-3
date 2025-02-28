@@ -77,21 +77,26 @@ float16_t f16_mul( float16_t a, float16_t b )
     signZ = signA ^ signB;
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
+    // hardware not implemented
     if ( expA == 0x1F ) {
 #ifdef INPUT_SUBNORMAL_CHECK
         printf("mul input NaN or inf\n");
 #endif
-        if ( sigA || ((expB == 0x1F) && sigB) ) goto propagateNaN;
+        if ( sigA || ((expB == 0x1F) && sigB) ) goto propagateNaN; // A:NaN / A:NaN or A:inf, B:NaN
         magBits = expB | sigB;
         goto infArg;
     }
     if ( expB == 0x1F ) {
+#ifdef INPUT_SUBNORMAL_CHECK
+        printf("mul input NaN or inf\n");
+#endif
         if ( sigB ) goto propagateNaN;
         magBits = expA | sigA;
         goto infArg;
     }
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
+   // hardware not implemented (except 0 case)
     if ( ! expA ) {
         if ( ! sigA ) goto zero;
 #ifdef INPUT_SUBNORMAL_CHECK
@@ -112,7 +117,7 @@ float16_t f16_mul( float16_t a, float16_t b )
     }
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    expZ = expA + expB - 0xF;
+    expZ = expA + expB - 0xF; // expZ = -13 ~ 45
     sigA = (sigA | 0x0400)<<4;
     sigB = (sigB | 0x0400)<<5;
     sig32Z = (uint_fast32_t) sigA * sigB;
@@ -122,6 +127,7 @@ float16_t f16_mul( float16_t a, float16_t b )
         --expZ;
         sigZ <<= 1;
     }
+    // expZ = -14 ~ 45
 #ifndef IGNORE_SUBNORMAL_OUTPUT
     return softfloat_roundPackToF16( signZ, expZ, sigZ );
 #else
