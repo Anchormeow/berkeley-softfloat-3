@@ -115,8 +115,12 @@ int main(void) {
 
     // int a2 = 0x2e66;
     // int b2 = 0x3266;
-    int a2 = 0x9fbb;
-    int b2 = 0xa00a;
+
+    // special case
+    // int a2 = 0x9fbb;
+    // int b2 = 0xa00a;
+    int a2 = 0x2000;
+    int b2 = 0x2000;
 
     mul_hex(a2, b2);
     return 0;

@@ -40,7 +40,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "internals.h"
 #include "specialize.h"
 #include "softfloat.h"
+#include <stdlib.h>
+#include <stdio.h>
 
+#ifndef MY_F16
 float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
 {
     int_fast8_t expA;
@@ -191,3 +194,128 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
 
 }
 
+#else
+float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
+{
+    int_fast8_t expA;
+    uint_fast16_t sigA;
+    int_fast8_t expB;
+    uint_fast16_t sigB;
+    int_fast8_t expDiff;
+    uint_fast16_t uiZ;
+    bool signZ;
+    int_fast8_t expZ;
+    uint_fast16_t sigZ;
+    uint_fast16_t sigX, sigY;
+    int_fast8_t shiftDist;
+    uint_fast32_t sig32Z;
+    // int_fast8_t roundingMode;
+    union ui16_f16 uZ;
+
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    expA = expF16UI( uiA );
+    sigA = fracF16UI( uiA );
+    expB = expF16UI( uiB );
+    sigB = fracF16UI( uiB );
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    // expDiff = -31 ~ 31
+    expDiff = expA - expB;
+    if ( ! expDiff ) {
+        /*--------------------------------------------------------------------
+        *--------------------------------------------------------------------*/
+        if ( ! expA ) {
+            uiZ = uiA + sigB;
+            goto uiZ;
+        }
+        if ( expA == 0x1F ) {
+#ifdef INPUT_SUBNORMAL_CHECK
+            printf("add input NaN or inf\n");
+#endif
+            exit(16);
+        }
+        signZ = signF16UI( uiA );
+        expZ = expA;
+        // 1.A + 1.B
+        sigZ = 0x0800 + sigA + sigB;
+        // sigZ = 0 and expZ < 30
+        // if ( ! (sigZ & 1) && (expZ < 0x1E) ) {
+        //     sigZ >>= 1;
+        //     goto pack;
+        // }
+        sigZ <<= 3;
+    } else {
+        /*--------------------------------------------------------------------
+        *--------------------------------------------------------------------*/
+        signZ = signF16UI( uiA );
+        if ( expDiff < 0 ) {
+            /*----------------------------------------------------------------
+            *----------------------------------------------------------------*/
+            if ( expB == 0x1F ) {
+#ifdef INPUT_SUBNORMAL_CHECK
+                printf("add input NaN or inf\n");
+#endif
+                exit(16);
+            }
+            if ( expDiff <= -13 ) {
+                uiZ = packToF16UI( signZ, expB, sigB );
+                goto uiZ;
+            }
+            expZ = expB;
+            sigX = sigB | 0x0400;
+            sigY = sigA | 0x0400;
+            // expDiff = -12 ~ -1
+            // shiftDist = 7 ~ 18
+            shiftDist = 19 + expDiff;
+        } else {
+            /*----------------------------------------------------------------
+            *----------------------------------------------------------------*/
+            // uiZ = uiA;
+            if ( expA == 0x1F ) {
+#ifdef INPUT_SUBNORMAL_CHECK
+                printf("add input NaN or inf\n");
+#endif
+                exit(16);
+            }
+            if ( 13 <= expDiff ) {
+                uiZ = uiA;
+                goto uiZ;
+            }
+            expZ = expA;
+            sigX = sigA | 0x0400;
+            sigY = sigB | 0x0400;
+            // expDiff = 1 ~ 12
+            // shiftDist = 7 ~ 18
+            shiftDist = 19 - expDiff;
+        }
+        // 1.X(10)0(19) + 1.Y(10)0(19 - expDiff), 31.W
+        sig32Z =
+            ((uint_fast32_t) sigX<<19) + ((uint_fast32_t) sigY<<shiftDist);
+        if ( sig32Z < 0x40000000 ) {
+            --expZ;
+            sig32Z <<= 1;
+        }
+        sigZ = sig32Z>>16;
+        if ( sig32Z & 0xFFFF ) {
+            sigZ |= 1;
+        } else {
+            // sigZ last 0000, expZ < 30
+            // if ( ! (sigZ & 0xF) && (expZ < 0x1E) ) {
+            //     sigZ >>= 4;
+            //     goto pack;
+            // }
+        }
+    }
+    return softfloat_roundPackToF16( signZ, expZ, sigZ );
+
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+ pack:
+    uiZ = packToF16UI( signZ, expZ, sigZ );
+ uiZ:
+    uZ.ui = uiZ;
+    return uZ.f;
+
+}
+#endif

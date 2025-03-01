@@ -41,7 +41,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "specialize.h"
 #include "softfloat.h"
 #include <stdio.h>
+#include <stdlib.h>
 
+#ifndef MY_F16
 float16_t f16_mul( float16_t a, float16_t b )
 {
     union ui16_f16 uA;
@@ -175,3 +177,117 @@ float16_t f16_mul( float16_t a, float16_t b )
 
 }
 
+#else
+float16_t f16_mul( float16_t a, float16_t b )
+{
+    union ui16_f16 uA;
+    uint_fast16_t uiA;
+    bool signA;
+    int_fast8_t expA;
+    uint_fast16_t sigA;
+    union ui16_f16 uB;
+    uint_fast16_t uiB;
+    bool signB;
+    int_fast8_t expB;
+    uint_fast16_t sigB;
+    bool signZ;
+    // uint_fast16_t magBits;
+    // struct exp8_sig16 normExpSig;
+    int_fast8_t expZ;
+    uint_fast32_t sig32Z;
+    uint_fast16_t sigZ, uiZ;
+    union ui16_f16 uZ;
+
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    uA.f = a;
+    uiA = uA.ui;
+    signA = signF16UI( uiA );
+    expA  = expF16UI( uiA );
+    sigA  = fracF16UI( uiA );
+    uB.f = b;
+    uiB = uB.ui;
+    signB = signF16UI( uiB );
+    expB  = expF16UI( uiB );
+    sigB  = fracF16UI( uiB );
+    signZ = signA ^ signB;
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    // hardware not implemented
+    if ( expA == 0x1F ) {
+#ifdef INPUT_SUBNORMAL_CHECK
+        printf("mul input NaN or inf\n");
+#endif
+        exit(16);
+    }
+    if ( expB == 0x1F ) {
+#ifdef INPUT_SUBNORMAL_CHECK
+        printf("mul input NaN or inf\n");
+#endif
+        exit(16);
+    }
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+   // hardware not implemented (except 0 case)
+    if ( ! expA ) {
+        if ( ! sigA ) goto zero;
+#ifdef INPUT_SUBNORMAL_CHECK
+        printf("mul input subnormal A\n");
+#endif
+        exit(16);
+    }
+    if ( ! expB ) {
+        if ( ! sigB ) goto zero;
+#ifdef INPUT_SUBNORMAL_CHECK
+        printf("mul input subnormal B\n");
+#endif
+        exit(16);
+    }
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    expZ = expA + expB - 0xF; // expZ = -13 ~ 45
+    sigA = (sigA | 0x0400)<<4;
+    sigB = (sigB | 0x0400)<<5;
+    sig32Z = (uint_fast32_t) sigA * sigB;
+    sigZ = sig32Z>>16;
+    if ( sig32Z & 0xFFFF ) sigZ |= 1;
+    if ( sigZ < 0x4000 ) {
+        --expZ;
+        sigZ <<= 1;
+    }
+    // expZ = -14 ~ 45
+#ifndef IGNORE_SUBNORMAL_OUTPUT
+    return softfloat_roundPackToF16( signZ, expZ, sigZ );
+#else
+    float16_t tmp;
+    tmp = softfloat_roundPackToF16( signZ, expZ, sigZ );
+    union ui16_f16 utmp;
+    uint_fast16_t uitmp;
+    int_fast8_t exptmp;
+    uint_fast16_t sigtmp;
+    utmp.f = tmp;
+    uitmp = utmp.ui;
+    exptmp  = expF16UI( uitmp );
+    sigtmp  = fracF16UI( uitmp );
+    if (( ! exptmp )&&(sigtmp)) {
+#ifdef OUTPUT_SUBNORMAL_CHECK
+        printf ("mul output subnormal!\n");
+        exit(16);
+#endif
+        uiZ = packToF16UI( signZ, 0, 0 );
+        uZ.ui = uiZ;
+        return uZ.f;
+    } else {
+        return tmp;
+    }
+#endif
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+ zero:
+    uiZ = packToF16UI( signZ, 0, 0 );
+ uiZ:
+    uZ.ui = uiZ;
+    return uZ.f;
+
+}
+#endif

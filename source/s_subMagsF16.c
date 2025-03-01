@@ -40,7 +40,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "internals.h"
 #include "specialize.h"
 #include "softfloat.h"
+#include <stdlib.h>
+#include <stdio.h>
 
+#ifndef MY_F16
 float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
 {
     int_fast8_t expA;
@@ -95,6 +98,7 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
         // move 1 to 1.X, e.g. 0x0080, sigDiff = 8-5 = 3
         shiftDist = softfloat_countLeadingZeros16( sigDiff ) - 5;
         expZ = expA - shiftDist;
+        // subnormal!!
         if ( expZ < 0 ) {
             shiftDist = expA;
             expZ = 0;
@@ -199,3 +203,141 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
 
 }
 
+#else
+float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
+{
+    int_fast8_t expA;
+    uint_fast16_t sigA;
+    int_fast8_t expB;
+    uint_fast16_t sigB;
+    int_fast8_t expDiff;
+    uint_fast16_t uiZ;
+    int_fast16_t sigDiff;
+    bool signZ;
+    int_fast8_t shiftDist, expZ;
+    uint_fast16_t sigZ, sigX, sigY;
+    uint_fast32_t sig32Z;
+    // int_fast8_t roundingMode;
+    union ui16_f16 uZ;
+
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    expA = expF16UI( uiA );
+    sigA = fracF16UI( uiA );
+    expB = expF16UI( uiB );
+    sigB = fracF16UI( uiB );
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    // expDiff = -31 ~ 31
+    expDiff = expA - expB;
+    if ( ! expDiff ) {
+        /*--------------------------------------------------------------------
+        *--------------------------------------------------------------------*/
+        if ( expA == 0x1F ) {
+#ifdef INPUT_SUBNORMAL_CHECK
+            printf("sub input NaN or inf\n");
+#endif
+            exit(16);
+        }
+        // may < 0
+        sigDiff = sigA - sigB;
+        // A = B
+        if ( ! sigDiff ) {
+            uiZ =
+                packToF16UI(
+                    0, 0, 0 );
+            goto uiZ;
+        }
+        // 1.A - 1.B = 0.X
+        if ( expA ) --expA;
+        signZ = signF16UI( uiA );
+        if ( sigDiff < 0 ) {
+            signZ = ! signZ;
+            sigDiff = -sigDiff;
+        }
+        // move 1 to 1.X, e.g. 0x0080, sigDiff = 8-5 = 3
+        shiftDist = softfloat_countLeadingZeros16( sigDiff ) - 5;
+        expZ = expA - shiftDist;
+        if ( expZ < 0 ) {
+            // shiftDist = expA;
+            // expZ = 0;
+            uiZ = packToF16UI( signZ, 0, 0 );
+            goto uiZ;
+        }
+        sigZ = sigDiff<<shiftDist;
+        goto pack;
+    } else {
+        /*--------------------------------------------------------------------
+        *--------------------------------------------------------------------*/
+        signZ = signF16UI( uiA );
+        // B > A, expB = 1 ~ 31, expA = 0 ~ 30
+        if ( expDiff < 0 ) {
+            /*----------------------------------------------------------------
+            *----------------------------------------------------------------*/
+            signZ = ! signZ;
+            if ( expB == 0x1F ) {
+#ifdef INPUT_SUBNORMAL_CHECK
+                printf("sub input NaN or inf\n");
+#endif
+                exit(16);
+            }
+            if ( expDiff <= -13 ) {
+                uiZ = packToF16UI( signZ, expB, sigB );
+                goto uiZ;
+            }
+            // expZ = 19 ~ 48
+            expZ = expA + 19;
+            sigX = sigB | 0x0400;
+            sigY = sigA | 0x0400;
+            expDiff = -expDiff;
+        // B < A, expA = 1 ~ 31, expB = 0 ~ 30
+        } else {
+            /*----------------------------------------------------------------
+            *----------------------------------------------------------------*/
+            // uiZ = uiA;
+            if ( expA == 0x1F ) {
+#ifdef INPUT_SUBNORMAL_CHECK
+                printf("sub input NaN or inf\n");
+#endif
+                exit(16);
+            }
+            if ( 13 <= expDiff ) {
+                uiZ = uiA;
+                goto uiZ;
+            }
+            // expZ = 19 ~ 48
+            expZ = expB + 19;
+            sigX = sigA | 0x0400;
+            sigY = sigB | 0x0400;
+        }
+        // expDiff = 1 ~ 12
+        // 1.X(10)0(expDiff) - 1.Y, > 0
+        sig32Z = ((uint_fast32_t) sigX<<expDiff) - sigY;
+        // move 1 to 1.X, e.g. 0x0000 0080, sigDiff = 24-1 = 23
+        shiftDist = softfloat_countLeadingZeros32( sig32Z ) - 1;
+        // move 1 to 1.X, 31.W
+        sig32Z <<= shiftDist;
+        // expZ - shiftDist > 0
+        expZ -= shiftDist;
+        sigZ = sig32Z>>16;
+        if ( sig32Z & 0xFFFF ) {
+            sigZ |= 1;
+        } else {
+            // if ( ! (sigZ & 0xF) && ((unsigned int) expZ < 0x1E) ) {
+            //     sigZ >>= 4;
+            //     goto pack;
+            // }
+        }
+        return softfloat_roundPackToF16( signZ, expZ, sigZ );
+    }
+
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+ pack:
+    uiZ = packToF16UI( signZ, expZ, sigZ );
+ uiZ:
+    uZ.ui = uiZ;
+    return uZ.f;
+
+}
+#endif

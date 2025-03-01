@@ -40,7 +40,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "internals.h"
 #include "softfloat.h"
 #include <stdio.h>
+#include <stdlib.h>
 
+#ifndef MY_F16
 float16_t
  softfloat_roundPackToF16( bool sign, int_fast16_t exp, uint_fast16_t sig )
 {
@@ -120,7 +122,7 @@ float16_t
     }
     sig &= ~(uint_fast16_t) (! (roundBits ^ 8) & roundNearEven);
     if ( ! sig ) {
-        // printf("spe: exp: %x sig: %x\n", exp, sig);
+        printf("special: exp: %x sig: %x\n", exp, sig);
         exp = 0;
     }
     /*------------------------------------------------------------------------
@@ -132,4 +134,62 @@ float16_t
     return uZ.f;
 
 }
+
+#else
+float16_t
+ softfloat_roundPackToF16( bool sign, int_fast16_t exp, uint_fast16_t sig )
+{
+    uint_fast8_t roundingMode;
+    bool roundNearEven;
+    uint_fast8_t roundIncrement, roundBits;
+    // bool isTiny;
+    uint_fast16_t uiZ;
+    union ui16_f16 uZ;
+
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    // roundingMode = 0
+    roundingMode = softfloat_roundingMode;
+    // true
+    roundNearEven = 1;
+    roundIncrement = 0x8;
+    // LSB 4bits
+    roundBits = sig & 0xF;
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    // mul:
+    // exp = -14 ~ 45
+    // exp < 0 / exp >= 29
+    // add:
+    // exp = ?
+    if ( 0x1D <= (unsigned int) exp ) {
+        if ( exp < 0 ) {
+            // printf("0x1D <= (unsigned int) exp, exp < 0\n");
+            /*----------------------------------------------------------------
+            *----------------------------------------------------------------*/
+            uiZ = packToF16UI( sign, 0, 0 );
+            goto uiZ;
+        // too big number, no need
+        // mul:
+        // exp = 30 ~ 45 || exp = 29 but carry
+        // add:
+        // exp = ?
+        } else if ( (0x1D < exp) || (0x8000 <= sig + roundIncrement) ) {
+            printf("(0x1D < exp) || (0x8000 <= sig + roundIncrement)\n");
+            exit(16);
+        }
+    }
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    sig = (sig + roundIncrement)>>4;
+
+    sig &= ~(uint_fast16_t) (! (roundBits ^ 8) & roundNearEven);
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+ uiZ:
+    uZ.ui = uiZ;
+    return uZ.f;
+
+}
+#endif
 
