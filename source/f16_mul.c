@@ -197,6 +197,8 @@ float16_t f16_mul( float16_t a, float16_t b )
     uint_fast32_t sig32Z;
     uint_fast16_t sigZ, uiZ;
     union ui16_f16 uZ;
+    int_fast8_t expZ_1;
+    bool subnormal;
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -245,22 +247,30 @@ float16_t f16_mul( float16_t a, float16_t b )
     }
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    expZ = expA + expB - 0xF; // expZ = -13 ~ 45
-    sigA = (sigA | 0x0400)<<4;
-    sigB = (sigB | 0x0400)<<5;
+    // expZ = expA + expB - 0xF; // expZ = -13 ~ 45
+    expZ = expA + expB; // expZ = 2 ~ 60
+    // sigA = (sigA | 0x0400)<<4;
+    // sigB = (sigB | 0x0400)<<5;
+    sigA = sigA | 0x0400;
+    sigB = sigB | 0x0400;
     sig32Z = (uint_fast32_t) sigA * sigB;
-    sigZ = sig32Z>>16;
-    if ( sig32Z & 0xFFFF ) sigZ |= 1;
+    // sigZ = sig32Z>>16;
+    sigZ = sig32Z>>7;
+    // if ( sig32Z & 0xFFFF ) sigZ |= 1;
+    if ( sig32Z & 0x7F ) sigZ |= 1;
     if ( sigZ < 0x4000 ) {
         --expZ;
         sigZ <<= 1;
     }
-    // expZ = -14 ~ 45
+    // expZ = 1 ~ 60
+    expZ_1 = (expZ >= 0xF) ? (expZ - 0xF) : (0xF - expZ);
+    subnormal = !(expZ >= 0xF);
+
 #ifndef IGNORE_SUBNORMAL_OUTPUT
-    return softfloat_roundPackToF16( signZ, expZ, sigZ );
+    return softfloat_roundPackToF16( signZ, expZ, sigZ, subnormal );
 #else
     float16_t tmp;
-    tmp = softfloat_roundPackToF16( signZ, expZ, sigZ );
+    tmp = softfloat_roundPackToF16( signZ, expZ_1, sigZ, subnormal );
     union ui16_f16 utmp;
     uint_fast16_t uitmp;
     int_fast8_t exptmp;
@@ -269,9 +279,12 @@ float16_t f16_mul( float16_t a, float16_t b )
     uitmp = utmp.ui;
     exptmp  = expF16UI( uitmp );
     sigtmp  = fracF16UI( uitmp );
-    if (( ! exptmp )&&(sigtmp)) {
+    if (( ! exptmp )&&(sigtmp != 0)) {
 #ifdef OUTPUT_SUBNORMAL_CHECK
         printf ("mul output subnormal!\n");
+        printf ("uitmp = %x\n", uitmp);
+        printf ("subnormal = %d\n", subnormal);
+        printf ("expZ = %d\n", expZ);
         exit(16);
 #endif
         uiZ = packToF16UI( signZ, 0, 0 );

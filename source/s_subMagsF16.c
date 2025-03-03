@@ -95,7 +95,7 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
             signZ = ! signZ;
             sigDiff = -sigDiff;
         }
-        // move 1 to 1.X, e.g. 0x0080, sigDiff = 8-5 = 3
+        // move 1 to 1.X, e.g. 0x0080, sigDiff = 8-5 = 3, 1 ~ 10
         shiftDist = softfloat_countLeadingZeros16( sigDiff ) - 5;
         expZ = expA - shiftDist;
         // subnormal!!
@@ -154,7 +154,7 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
         shiftDist = softfloat_countLeadingZeros32( sig32Z ) - 1;
         // move 1 to 1.X, 31.W
         sig32Z <<= shiftDist;
-        // expZ - shiftDist > 0
+        // expZ - shiftDist may < 0
         expZ -= shiftDist;
         sigZ = sig32Z>>16;
         if ( sig32Z & 0xFFFF ) {
@@ -219,6 +219,8 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
     uint_fast32_t sig32Z;
     // int_fast8_t roundingMode;
     union ui16_f16 uZ;
+    int_fast8_t expZ_1;
+    bool subnormal;
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -229,7 +231,9 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     // expDiff = -31 ~ 31
-    expDiff = expA - expB;
+    // expDiff = expA - expB;
+    expDiff = (expA >= expB) ? expA - expB : expB - expA;
+    bool aGTb = expA >= expB;
     if ( ! expDiff ) {
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
@@ -240,7 +244,9 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
             exit(16);
         }
         // may < 0
-        sigDiff = sigA - sigB;
+        // sigDiff = sigA - sigB;
+        sigDiff = (sigA >= sigB) ? (sigA - sigB) : (sigB - sigA);
+        bool sigAgtB = sigA >= sigB;
         // A = B
         if ( ! sigDiff ) {
             uiZ =
@@ -251,14 +257,18 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
         // 1.A - 1.B = 0.X
         if ( expA ) --expA;
         signZ = signF16UI( uiA );
-        if ( sigDiff < 0 ) {
+        // if ( sigDiff < 0 ) {
+        if ( sigAgtB == 0 ) {
             signZ = ! signZ;
-            sigDiff = -sigDiff;
+            // sigDiff = -sigDiff;
         }
-        // move 1 to 1.X, e.g. 0x0080, sigDiff = 8-5 = 3
+        // move 1 to 1.X, e.g. 0x0080, sigDiff = 8-5 = 3, 1 ~ 10
         shiftDist = softfloat_countLeadingZeros16( sigDiff ) - 5;
-        expZ = expA - shiftDist;
-        if ( expZ < 0 ) {
+        // expZ = expA - shiftDist;
+        expZ = (expA >= shiftDist) ? (expA - shiftDist) : (shiftDist - expA);
+        subnormal = !(expA >= shiftDist);
+        // if ( expZ < 0 ) {
+        if ( subnormal == true) {
             // shiftDist = expA;
             // expZ = 0;
             uiZ = packToF16UI( signZ, 0, 0 );
@@ -271,7 +281,8 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
         *--------------------------------------------------------------------*/
         signZ = signF16UI( uiA );
         // B > A, expB = 1 ~ 31, expA = 0 ~ 30
-        if ( expDiff < 0 ) {
+        // if ( expDiff < 0 ) {
+        if ( aGTb == 0 ) {
             /*----------------------------------------------------------------
             *----------------------------------------------------------------*/
             signZ = ! signZ;
@@ -281,15 +292,17 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
 #endif
                 exit(16);
             }
-            if ( expDiff <= -13 ) {
-                uiZ = packToF16UI( signZ, expB, sigB );
+            // if ( expDiff <= -13 ) {
+            if ( expDiff >= 13 ) {
+                // uiZ = packToF16UI( signZ, expB, sigB );
+                uiZ = uiB;
                 goto uiZ;
             }
             // expZ = 19 ~ 48
             expZ = expA + 19;
             sigX = sigB | 0x0400;
             sigY = sigA | 0x0400;
-            expDiff = -expDiff;
+            // expDiff = -expDiff;
         // B < A, expA = 1 ~ 31, expB = 0 ~ 30
         } else {
             /*----------------------------------------------------------------
@@ -317,8 +330,10 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
         shiftDist = softfloat_countLeadingZeros32( sig32Z ) - 1;
         // move 1 to 1.X, 31.W
         sig32Z <<= shiftDist;
-        // expZ - shiftDist > 0
-        expZ -= shiftDist;
+        // expZ - shiftDist may < 0
+        // expZ -= shiftDist;
+        expZ_1 = (expZ >= shiftDist) ? (expZ - shiftDist) : (shiftDist - expZ);
+        subnormal = !(expZ >= shiftDist);
         sigZ = sig32Z>>16;
         if ( sig32Z & 0xFFFF ) {
             sigZ |= 1;
@@ -328,7 +343,7 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
             //     goto pack;
             // }
         }
-        return softfloat_roundPackToF16( signZ, expZ, sigZ );
+        return softfloat_roundPackToF16( signZ, expZ_1, sigZ, subnormal );
     }
 
     /*------------------------------------------------------------------------

@@ -137,7 +137,7 @@ float16_t
 
 #else
 float16_t
- softfloat_roundPackToF16( bool sign, int_fast16_t exp, uint_fast16_t sig )
+ softfloat_roundPackToF16( bool sign, int_fast16_t exp, uint_fast16_t sig, bool subnormal)
 {
     uint_fast8_t roundingMode;
     bool roundNearEven;
@@ -149,9 +149,9 @@ float16_t
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     // roundingMode = 0
-    roundingMode = softfloat_roundingMode;
+    // roundingMode = softfloat_roundingMode;
     // true
-    roundNearEven = 1;
+    // roundNearEven = 1;
     roundIncrement = 0x8;
     // LSB 4bits
     roundBits = sig & 0xF;
@@ -162,8 +162,10 @@ float16_t
     // exp < 0 / exp >= 29
     // add:
     // exp = ?
-    if ( 0x1D <= (unsigned int) exp ) {
-        if ( exp < 0 ) {
+    // if ( 0x1D <= (unsigned int) exp ) {
+    if (( 0x1D <= exp )||(subnormal == true)) {
+        // if ( exp < 0 ) {
+        if ( subnormal == true) {
             // printf("0x1D <= (unsigned int) exp, exp < 0\n");
             /*----------------------------------------------------------------
             *----------------------------------------------------------------*/
@@ -176,6 +178,7 @@ float16_t
         // exp = ?
         } else if ( (0x1D < exp) || (0x8000 <= sig + roundIncrement) ) {
             printf("(0x1D < exp) || (0x8000 <= sig + roundIncrement)\n");
+            printf("exp: %d sig: %x\n", exp, sig);
             exit(16);
         }
     }
@@ -183,9 +186,12 @@ float16_t
     *------------------------------------------------------------------------*/
     sig = (sig + roundIncrement)>>4;
 
-    sig &= ~(uint_fast16_t) (! (roundBits ^ 8) & roundNearEven);
+    // sig &= ~(uint_fast16_t) (! (roundBits ^ 8) & roundNearEven);
+    sig &= ~(uint_fast16_t) (! (roundBits ^ 8));
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
+ packReturn:
+    uiZ = packToF16UI( sign, exp, sig );
  uiZ:
     uZ.ui = uiZ;
     return uZ.f;

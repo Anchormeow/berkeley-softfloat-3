@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include "primitives.h"
 #include "softfloat_types.h"
+#include "softfloat.h"
 
 union ui16_f16 { uint16_t ui; float16_t f; };
 union ui16_bf16 { uint16_t ui; bfloat16_t f; };
@@ -90,8 +91,11 @@ int_fast64_t softfloat_roundMToI64( bool, uint32_t *, uint_fast8_t, bool );
 
 struct exp8_sig16 { int_fast8_t exp; uint_fast16_t sig; };
 struct exp8_sig16 softfloat_normSubnormalF16Sig( uint_fast16_t );
-
+#ifndef MY_F16
 float16_t softfloat_roundPackToF16( bool, int_fast16_t, uint_fast16_t );
+#else
+float16_t softfloat_roundPackToF16( bool, int_fast16_t, uint_fast16_t, bool );
+#endif
 float16_t softfloat_normRoundPackToF16( bool, int_fast16_t, uint_fast16_t );
 
 float16_t softfloat_addMagsF16( uint_fast16_t, uint_fast16_t );

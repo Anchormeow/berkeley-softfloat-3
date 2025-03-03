@@ -221,7 +221,9 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     // expDiff = -31 ~ 31
-    expDiff = expA - expB;
+    // expDiff = expA - expB;
+    expDiff = (expA >= expB) ? (expA - expB) : (expB - expA);
+    bool aGTb = expA >= expB;
     if ( ! expDiff ) {
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
@@ -249,7 +251,8 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
         signZ = signF16UI( uiA );
-        if ( expDiff < 0 ) {
+        // if ( expDiff < 0 ) {
+        if ( aGTb == 0 ) {
             /*----------------------------------------------------------------
             *----------------------------------------------------------------*/
             if ( expB == 0x1F ) {
@@ -258,8 +261,10 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
 #endif
                 exit(16);
             }
-            if ( expDiff <= -13 ) {
-                uiZ = packToF16UI( signZ, expB, sigB );
+            // if ( expDiff <= -13 ) {
+            if ( expDiff >= 13 ) {
+                // uiZ = packToF16UI( signZ, expB, sigB );
+                uiZ = uiB;
                 goto uiZ;
             }
             expZ = expB;
@@ -267,7 +272,8 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
             sigY = sigA | 0x0400;
             // expDiff = -12 ~ -1
             // shiftDist = 7 ~ 18
-            shiftDist = 19 + expDiff;
+            // shiftDist = 19 + expDiff;
+            shiftDist = 19 - expDiff;
         } else {
             /*----------------------------------------------------------------
             *----------------------------------------------------------------*/
@@ -307,7 +313,7 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
             // }
         }
     }
-    return softfloat_roundPackToF16( signZ, expZ, sigZ );
+    return softfloat_roundPackToF16( signZ, expZ, sigZ, false);
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
