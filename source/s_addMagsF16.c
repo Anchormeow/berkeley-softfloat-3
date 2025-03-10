@@ -227,6 +227,7 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
     if ( ! expDiff ) {
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
+        // no subnormal, two 0s case
         if ( ! expA ) {
             uiZ = uiA + sigB;
             goto uiZ;
@@ -241,7 +242,7 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
         expZ = expA;
         // 1.A + 1.B
         sigZ = 0x0800 + sigA + sigB;
-        // sigZ = 0 and expZ < 30
+        // sigZ LSB = 0 and expZ < 30
         // if ( ! (sigZ & 1) && (expZ < 0x1E) ) {
         //     sigZ >>= 1;
         //     goto pack;
@@ -269,7 +270,9 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
             }
             expZ = expB;
             sigX = sigB | 0x0400;
-            sigY = sigA | 0x0400;
+            // sigY = sigA | 0x0400;
+            // A = 0 case
+            sigY = (expA == 0) ? 0 : (sigA | 0x0400) ;
             // expDiff = -12 ~ -1
             // shiftDist = 7 ~ 18
             // shiftDist = 19 + expDiff;
@@ -290,7 +293,9 @@ float16_t softfloat_addMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
             }
             expZ = expA;
             sigX = sigA | 0x0400;
-            sigY = sigB | 0x0400;
+            // sigY = sigB | 0x0400;
+            // B = 0 case
+            sigY = (expB == 0) ? 0 : (sigB | 0x0400) ;
             // expDiff = 1 ~ 12
             // shiftDist = 7 ~ 18
             shiftDist = 19 - expDiff;

@@ -301,7 +301,9 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
             // expZ = 19 ~ 48
             expZ = expA + 19;
             sigX = sigB | 0x0400;
-            sigY = sigA | 0x0400;
+            // sigY = sigA | 0x0400;
+            // A = 0 case
+            sigY = (expA == 0) ? 0 : (sigA | 0x0400);
             // expDiff = -expDiff;
         // B < A, expA = 1 ~ 31, expB = 0 ~ 30
         } else {
@@ -321,7 +323,9 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
             // expZ = 19 ~ 48
             expZ = expB + 19;
             sigX = sigA | 0x0400;
-            sigY = sigB | 0x0400;
+            // sigY = sigB | 0x0400;
+            // B = 0 case
+            sigY = (expB == 0) ? 0 : (sigB | 0x0400);
         }
         // expDiff = 1 ~ 12
         // 1.X(10)0(expDiff) - 1.Y, > 0
