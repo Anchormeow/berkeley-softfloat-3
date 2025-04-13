@@ -253,11 +253,15 @@ float16_t f16_mul( float16_t a, float16_t b )
     // sigB = (sigB | 0x0400)<<5;
     sigA = sigA | 0x0400;
     sigB = sigB | 0x0400;
+    // printf("sigA = %x\n", sigA);
+    // printf("sigB = %x\n", sigB);
     sig32Z = (uint_fast32_t) sigA * sigB;
+    // printf("sig32Z = %x\n", sig32Z);
     // sigZ = sig32Z>>16;
     sigZ = sig32Z>>7;
     // if ( sig32Z & 0xFFFF ) sigZ |= 1;
     if ( sig32Z & 0x7F ) sigZ |= 1;
+    // printf("sigZ1 = %x\n", sigZ);
     if ( sigZ < 0x4000 ) {
         --expZ;
         sigZ <<= 1;

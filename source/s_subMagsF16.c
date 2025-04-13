@@ -246,6 +246,7 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
         // may < 0
         // sigDiff = sigA - sigB;
         sigDiff = (sigA >= sigB) ? (sigA - sigB) : (sigB - sigA);
+        // printf("sigDiff = %x\n", sigDiff);
         bool sigAgtB = sigA >= sigB;
         // A = B
         if ( ! sigDiff ) {
@@ -256,6 +257,7 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
         }
         // 1.A - 1.B = 0.X
         if ( expA ) --expA;
+        // printf("expA = %x\n", expA);
         signZ = signF16UI( uiA );
         // if ( sigDiff < 0 ) {
         if ( sigAgtB == 0 ) {
@@ -264,9 +266,12 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
         }
         // move 1 to 1.X, e.g. 0x0080, sigDiff = 8-5 = 3, 1 ~ 10
         shiftDist = softfloat_countLeadingZeros16( sigDiff ) - 5;
+        // printf("shiftDist = %x\n", shiftDist);
         // expZ = expA - shiftDist;
         expZ = (expA >= shiftDist) ? (expA - shiftDist) : (shiftDist - expA);
+        // printf("expZ = %x\n", expZ);
         subnormal = !(expA >= shiftDist);
+        // printf("subnormal = %x\n", subnormal);
         // if ( expZ < 0 ) {
         if ( subnormal == true) {
             // shiftDist = expA;
@@ -275,6 +280,7 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
             goto uiZ;
         }
         sigZ = sigDiff<<shiftDist;
+        // printf("sigZ = %x\n", sigZ);
         goto pack;
     } else {
         /*--------------------------------------------------------------------
@@ -304,6 +310,9 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
             // sigY = sigA | 0x0400;
             // A = 0 case
             sigY = (expA == 0) ? 0 : (sigA | 0x0400);
+            // printf("sigX = %x\n", sigX);
+            // printf("sigY = %x\n", sigY);
+            // printf("expZ = %x\n", expZ);
             // expDiff = -expDiff;
         // B < A, expA = 1 ~ 31, expB = 0 ~ 30
         } else {
@@ -330,15 +339,21 @@ float16_t softfloat_subMagsF16( uint_fast16_t uiA, uint_fast16_t uiB )
         // expDiff = 1 ~ 12
         // 1.X(10)0(expDiff) - 1.Y, > 0
         sig32Z = ((uint_fast32_t) sigX<<expDiff) - sigY;
+        // printf("sig32Z = %x\n", sig32Z);
         // move 1 to 1.X, e.g. 0x0000 0080, sigDiff = 24-1 = 23
         shiftDist = softfloat_countLeadingZeros32( sig32Z ) - 1;
+        // printf("shiftDist = %x\n", shiftDist);
         // move 1 to 1.X, 31.W
         sig32Z <<= shiftDist;
+        // printf("sig32Z = %x\n", sig32Z);
         // expZ - shiftDist may < 0
         // expZ -= shiftDist;
         expZ_1 = (expZ >= shiftDist) ? (expZ - shiftDist) : (shiftDist - expZ);
+        // printf("expZ_1 = %x\n", expZ_1);
         subnormal = !(expZ >= shiftDist);
+        // printf("subnormal = %x\n", subnormal);
         sigZ = sig32Z>>16;
+        // printf("sigZ = %x\n", sigZ);
         if ( sig32Z & 0xFFFF ) {
             sigZ |= 1;
         } else {
