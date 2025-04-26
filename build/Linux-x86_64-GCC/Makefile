@@ -44,7 +44,8 @@ SOFTFLOAT_OPTS ?= \
 ADDITIONAL_OPTS = 
 
 DELETE = rm -f
-C_INCLUDES = -I. -I$(SOURCE_DIR)/$(SPECIALIZE_TYPE) -I$(SOURCE_DIR)/include
+# C_INCLUDES = -I. -I$(SOURCE_DIR)/$(SPECIALIZE_TYPE) -I$(SOURCE_DIR)/include
+C_INCLUDES = -I. -I$(SOURCE_DIR)/include
 COMPILE_C = \
 @  g++ -c -DSOFTFLOAT_FAST_INT64 \
     $(SOFTFLOAT_OPTS) $(ADDITIONAL_OPTS) $(C_INCLUDES) -O2 -o $@
@@ -271,8 +272,8 @@ $(OBJS_ALL): \
   $(SOURCE_DIR)/include/primitives.h
 $(OBJS_SPECIALIZE) $(OBJS_OTHERS): \
   $(SOURCE_DIR)/include/softfloat_types.h $(SOURCE_DIR)/include/internals.h \
-  $(SOURCE_DIR)/$(SPECIALIZE_TYPE)/specialize.h \
   $(SOURCE_DIR)/include/softfloat.h
+# $(SOURCE_DIR)/$(SPECIALIZE_TYPE)/specialize.h \
 
 $(OBJS_PRIMITIVES) $(OBJS_OTHERS): %$(OBJ): $(SOURCE_DIR)/%.c
 	$(COMPILE_C) $(SOURCE_DIR)/$*.c
@@ -284,7 +285,7 @@ softfloat$(LIB): $(OBJS_ALL)
 	$(DELETE) $@
 	$(MAKELIB) $^
 	$(DELETE) $^
-	$(DELETE) $(OBJS_ALL)
+  # $(DELETE) $(OBJS_ALL)
 
 add$(EXE): $(SOURCE_DIR)/../csrc/add.c
 	$(COMPILE_CE) -o add $(SOURCE_DIR)/../csrc/add.c -L. -l:softfloat.a

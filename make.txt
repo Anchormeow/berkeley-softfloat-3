@@ -1,0 +1,19 @@
+rm -f s_countLeadingZeros8.o s_countLeadingZeros16.o s_countLeadingZeros32.o   s_roundPackToF16.o s_addMagsF16.o s_subMagsF16.o f16_add.o f16_mul.o f32_add.o f32_mul.o  softfloat.a \
+  rm -f add \
+  rm -f cheng \
+  rm -f tanh \
+  rm -f convert \
+  rm -f test \
+  rm -f fp32_mul_test \
+  rm -f fp32_add_test
+rm -f softfloat.a
+ar crs softfloat.a s_countLeadingZeros8.o s_countLeadingZeros16.o s_countLeadingZeros32.o s_roundPackToF16.o s_addMagsF16.o s_subMagsF16.o f16_add.o f16_mul.o f32_add.o f32_mul.o
+rm -f s_countLeadingZeros8.o s_countLeadingZeros16.o s_countLeadingZeros32.o s_roundPackToF16.o s_addMagsF16.o s_subMagsF16.o f16_add.o f16_mul.o f32_add.o f32_mul.o
+rm -f s_countLeadingZeros8.o s_countLeadingZeros16.o s_countLeadingZeros32.o   s_roundPackToF16.o s_addMagsF16.o s_subMagsF16.o f16_add.o f16_mul.o f32_add.o f32_mul.o 
+g++ -DSOFTFLOAT_FAST_INT64 -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32 -DINPUT_SUBNORMAL_CHECK -DIGNORE_SUBNORMAL_OUTPUT -I. -I../../source/include -O2 -o add ../../source/../csrc/add.c -L. -l:softfloat.a
+g++ -DSOFTFLOAT_FAST_INT64 -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32 -DINPUT_SUBNORMAL_CHECK -DIGNORE_SUBNORMAL_OUTPUT -I. -I../../source/include -O2 -o cheng ../../source/../csrc/cheng.cpp -L. -l:softfloat.a
+g++ -DSOFTFLOAT_FAST_INT64 -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32 -DINPUT_SUBNORMAL_CHECK -DIGNORE_SUBNORMAL_OUTPUT -I. -I../../source/include -O2 -o tanh ../../source/../csrc/tanh.cpp -L. -l:softfloat.a
+g++ -DSOFTFLOAT_FAST_INT64 -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32 -DINPUT_SUBNORMAL_CHECK -DIGNORE_SUBNORMAL_OUTPUT -I. -I../../source/include -O2 -o convert ../../source/../csrc/convert.cpp -L. -l:softfloat.a
+g++ -DSOFTFLOAT_FAST_INT64 -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32 -DINPUT_SUBNORMAL_CHECK -DIGNORE_SUBNORMAL_OUTPUT -I. -I../../source/include -O2 -o test ../../source/../csrc/test.cpp -L. -l:softfloat.a
+g++ -DSOFTFLOAT_FAST_INT64 -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32 -DINPUT_SUBNORMAL_CHECK -DIGNORE_SUBNORMAL_OUTPUT -I. -I../../source/include -O2 -o fp32_mul_test ../../source/../csrc/fp32_mul_test.cpp -L. -l:softfloat.a
+g++ -DSOFTFLOAT_FAST_INT64 -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32 -DINPUT_SUBNORMAL_CHECK -DIGNORE_SUBNORMAL_OUTPUT -I. -I../../source/include -O2 -o fp32_add_test ../../source/../csrc/fp32_add_test.cpp -L. -l:softfloat.a
